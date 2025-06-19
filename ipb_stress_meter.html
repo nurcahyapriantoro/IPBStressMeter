@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPB Stress-Meter Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden; /* Hanya sembunyikan scrollbar horizontal */
+            background-color: #0a1128;
+            min-height: 100vh;
+        }
+        #background-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background-image: url('GEDUNG-AHN-IPB.png');
+            background-size: cover;
+            background-position: center;
+            filter: blur(5px) brightness(0.4);
+            transform: scale(1.05);
+        }        .glass-card {
+            background: rgba(13, 40, 95, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 0 15px rgba(59, 130, 246, 0.6),
+                0 0 30px rgba(255, 255, 255, 0.3);
+            animation: border-glow 3s infinite alternate;
+            overflow-y: hidden; /* Hide scrollbar by default */
+            transition: all 0.5s ease;
+        }
+        
+        @keyframes border-glow {
+            0% {
+                border-color: rgba(59, 130, 246, 0.6);
+                box-shadow: 
+                    0 0 15px rgba(59, 130, 246, 0.6),
+                    0 0 30px rgba(255, 255, 255, 0.2);
+            }
+            100% {
+                border-color: rgba(255, 255, 255, 0.6);
+                box-shadow: 
+                    0 0 25px rgba(59, 130, 246, 0.8),
+                    0 0 40px rgba(255, 255, 255, 0.4);
+            }
+        }
+        
+        /* Custom Input Styles */
+        .form-input {
+            background-color: rgba(10, 23, 55, 0.6);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            transition: all 0.3s ease;
+            color: white;
+            font-weight: 500;
+            appearance: none;
+        }
+        .form-input:focus {
+            background-color: rgba(13, 40, 95, 0.7);
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+        }
+        /* Hide number input arrows */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }        /* Gauge Chart */
+        .gauge__circle-bg { 
+            fill: none; 
+            stroke: rgba(255, 255, 255, 0.2);
+            /* Removed glow effect */
+        }
+        .gauge__circle-val {
+            fill: none;
+            stroke-linecap: round;
+            transform: rotate(-90deg) translate(-100px);
+            transition: stroke-dashoffset 0.5s ease-in-out, stroke 0.5s ease-in-out;
+            /* Removed glow effect */
+        }
+        .gauge-green { 
+            stroke: #22c55e; 
+        }
+        .gauge-yellow { 
+            stroke: #f59e0b; 
+        }
+        .gauge-red { 
+            stroke: #ef4444; 
+        }
+        
+        /* Modern animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .btn-calculate {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-calculate:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-calculate:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .btn-calculate:hover:before {
+            left: 100%;
+        }
+        
+        .form-label {
+            color: #93c5fd;
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(147, 197, 253, 0.5);
+        }        .result-glow {
+            color: #ffffff; /* Added default color instead of empty ruleset */
+        }
+        
+        .ipb-logo {
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+            transition: all 0.3s ease;
+        }
+        
+        .ipb-logo:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.8));
+        }
+        
+        h1.title {
+            background: linear-gradient(90deg, #ffffff, #93c5fd, #ffffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient-shift 5s infinite alternate;
+        }
+          @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        
+        /* Recommendation section styles */
+        #recommendation-section {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+          #recommendation-section ul li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .recommendation-card {
+            transition: all 0.3s ease;
+        }
+          .recommendation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Custom scrollbar for better appearance */
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: rgba(30, 58, 138, 0.1);
+            border-radius: 10px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+        
+        /* Make sure the main container can scroll on smaller screens */
+        @media (max-height: 800px) {
+            .glass-card {
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body class="text-white">    <div id="background-image"></div>
+    <!-- Removed crystal animation canvas -->    <main class="min-h-screen flex items-center justify-center py-8 px-4">
+        <div id="main-container" class="w-full max-w-3xl glass-card rounded-2xl shadow-lg p-5 md:p-7 h-[600px]"><div class="flex flex-col items-center text-center mb-4">
+                <img src="Logo-IPB-University-Horizontal.png" alt="Logo IPB" class="h-14 mb-3 ipb-logo">
+                <h1 class="text-3xl md:text-4xl font-bold title">IPB Stress-Meter</h1>
+                <p class="text-gray-300 mt-1">Deteksi Dini Stres Akademik Mahasiswa</p>
+            </div><div class="mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label for="nama" class="font-medium text-sm text-gray-300 form-label">Nama Lengkap</label>
+                        <input type="text" id="nama" placeholder="" class="form-input w-full p-2 rounded-md">
+                    </div>
+                    <div class="space-y-1">
+                        <label for="jurusan" class="font-medium text-sm text-gray-300 form-label">Jurusan / Program Studi</label>
+                        <input type="text" id="jurusan" placeholder="" class="form-input w-full p-2 rounded-md">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 items-center">
+                <!-- Input Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label for="sks" class="font-medium text-sm text-gray-300 form-label">Jumlah SKS (1-24)</label>
+                        <input type="number" id="sks" placeholder="Contoh: 18" class="form-input w-full p-2 rounded-md text-center">
+                    </div>
+                    <div class="space-y-1">
+                        <label for="jam_tidur" class="font-medium text-sm text-gray-300 form-label">Jam Tidur/day</label>
+                        <input type="number" id="jam_tidur" step="0.5" placeholder="Contoh: 8 Jam" class="form-input w-full p-2 rounded-md text-center">
+                    </div>
+                    <div class="space-y-1">
+                        <label for="kesulitan_tugas" class="font-medium text-sm text-gray-300 form-label">Kesulitan Tugas (0-10)</label>
+                        <input type="number" id="kesulitan_tugas" placeholder="Contoh: 8" class="form-input w-full p-2 rounded-md text-center">
+                    </div>
+                    <div class="space-y-1">
+                        <label for="aktivitas_non_akademik" class="font-medium text-sm text-gray-300 form-label">Non-Akademik/week</label>
+                        <input type="number" id="aktivitas_non_akademik" placeholder="Contoh: 20 Jam" class="form-input w-full p-2 rounded-md text-center">
+                    </div>
+                    <div class="md:col-span-2 mt-2">
+                         <button id="calculateBtn" class="w-full btn-calculate text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            Ayo Cek Level Stres Kamu
+                        </button>
+                    </div>
+                </div>                <!-- Result Section -->
+                <div id="result" class="flex flex-col items-center justify-center p-2">
+                    <div class="relative w-44 h-44">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                           <circle class="gauge__circle-bg" stroke-width="10" cx="50" cy="50" r="45"></circle>
+                           <circle id="gauge-circle" class="gauge__circle-val" stroke-width="10" cx="50" cy="50" r="45" style="stroke-dasharray: 283; stroke-dashoffset: 283;"></circle>
+                        </svg>
+                        <div id="result-text-area" class="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center opacity-0 transition-opacity duration-500">
+                            <p id="stressScore" class="text-4xl font-extrabold result-glow">0.00</p>
+                            <p class="text-gray-300 text-sm">Level Stres</p>
+                        </div>
+                         <div id="prompt-text-area" class="absolute top-0 left-0 w-full h-full flex items-center justify-center transition-opacity duration-500">
+                            <p class="text-gray-400 text-center">%</p>
+                        </div>
+                    </div>
+                    <p id="stressLevel" class="text-xl font-semibold mt-2 h-8"></p>                
+                </div>
+            </div>
+             <p id="error-message" class="text-red-400 text-center mt-2 h-5"></p>
+               <!-- Recommendation Section -->
+             <div id="recommendation-section" class="mt-6 pt-4 border-t border-white/20 opacity-0 hidden transition-all duration-500 transform translate-y-4">
+                <div class="flex items-center mb-4">
+                    <div class="w-1 h-8 bg-blue-500 rounded-full mr-3"></div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white">Hasil Analisis & Rekomendasi</h2>
+                </div>
+                
+                <div class="mb-4 p-4 bg-white/5 rounded-lg">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-gray-300">Nama:</span>
+                        <span id="result-name" class="font-semibold text-white"></span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-gray-300">Jurusan:</span>
+                        <span id="result-jurusan" class="font-semibold text-white"></span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-gray-300">Level Stres:</span>
+                        <span id="result-level" class="font-semibold"></span>
+                        <span id="result-score" class="text-sm text-gray-400"></span>
+                    </div>
+                </div>
+                
+                <div class="mb-6 p-5 rounded-lg bg-gradient-to-r from-blue-900/40 to-indigo-900/40 backdrop-blur-sm border border-white/10">
+                    <h3 class="text-lg font-semibold mb-2 text-blue-300">Situasi Anda Saat Ini</h3>
+                    <p id="situation-text" class="text-gray-200 text-justify"></p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="p-5 rounded-lg bg-gradient-to-br from-green-900/30 to-blue-900/30 backdrop-blur-sm border border-white/10">                        <div class="flex items-center mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <h3 class="text-lg font-semibold text-green-300">Rekomendasi</h3>
+                        </div>
+                        <ul id="recommendation-list" class="list-none text-gray-200 space-y-2">
+                            <!-- Will be filled via JavaScript -->
+                        </ul>
+                    </div>
+                    
+                    <div class="p-5 rounded-lg bg-gradient-to-br from-blue-900/30 to-purple-900/30 backdrop-blur-sm border border-white/10">                        <div class="flex items-center mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <h3 class="text-lg font-semibold text-blue-300">Tips Untuk Diingat</h3>
+                        </div>
+                        <ul id="tips-list" class="list-none text-gray-200 space-y-2">
+                            <!-- Will be filled via JavaScript -->
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="p-5 rounded-lg bg-gradient-to-r from-yellow-900/20 to-orange-900/20 backdrop-blur-sm border border-white/10">
+                    <div class="flex items-center mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-lg font-semibold text-yellow-300">Penting</h3>
+                    </div>
+                    <p id="important-note" class="text-gray-200">
+                        Hasil ini hanyalah indikator awal dari tingkat stres akademik Anda. Jika Anda merasa perlu bantuan lebih lanjut, 
+                        jangan ragu untuk berkonsultasi dengan Biro Konseling IPB atau profesional kesehatan mental terdekat.
+                    </p>
+                </div>
+             </div>
+        </div>
+    </main><script>
+        // --- Crystal animation removed ---
+        // Background stress level indicators kept but not using particles
+        const backgroundEffects = {
+            'default': { color: 'rgba(150, 190, 255, 0.2)' },
+            'Rendah': { color: 'rgba(100, 255, 150, 0.3)' }, // Efek santai hijau
+            'Sedang': { color: 'rgba(255, 255, 100, 0.4)' }, // Efek sedang kuning
+            'Tinggi': { color: 'rgba(255, 100, 100, 0.5)' }  // Efek stres merah
+        };
+
+        // --- FUZZY LOGIC SCRIPT (Same as previous version) ---
+        const trimf = (x, params) => {
+            const [a, b, c] = params;
+            if (x < a || x > c) return 0.0;
+            if (x < b) return (a === b) ? 1.0 : (x - a) / (b - a);
+            else if (x > b) return (b === c) ? 1.0 : (c - x) / (c - b);
+            else return 1.0;
+        };
+        const trapmf = (x, params) => {
+            const [a, b, c, d] = params;
+            if (x < a || x > d) return 0.0;
+            if (x >= b && x <= c) return 1.0;
+            if (x < b) return (a === b) ? 1.0 : (x - a) / (b - a);
+            return (c === d) ? 1.0 : (d - x) / (d - c);
+        };
+        const fuzzySets = {
+            sks: {
+                sedikit: params => trapmf(params, [1, 1, 8, 12]),
+                normal: params => trimf(params, [9, 16, 20]),
+                banyak: params => trapmf(params, [18, 22, 24, 24]),
+            },
+            jam_tidur: {
+                kurang: params => trapmf(params, [3, 3, 5, 6]),
+                cukup: params => trimf(params, [5.5, 6.5, 7.5]),
+                ideal: params => trapmf(params, [7, 8, 10, 10]),
+            },
+            kesulitan_tugas: {
+                mudah: params => trapmf(params, [1, 1, 4, 5]),
+                menantang: params => trimf(params, [4, 6, 8]),
+                sangat_sulit: params => trapmf(params, [7, 9, 10, 10]),
+            },
+            aktivitas_non_akademik: {
+                rendah: params => trapmf(params, [0, 0, 5, 7]),
+                sedang: params => trimf(params, [6, 9, 13]),
+                tinggi: params => trapmf(params, [12, 16, 20, 20]),
+            },
+            level_stres: {
+                universe: Array.from({ length: 101 }, (_, i) => i),
+                rendah: params => trapmf(params, [0, 0, 30, 45]),
+                sedang: params => trimf(params, [35, 55, 75]),
+                tinggi: params => trapmf(params, [65, 80, 100, 100]),
+            }
+        };
+        const prediksiStres = (inputs) => {
+            const fuzzified = {
+                sks: {
+                    sedikit: fuzzySets.sks.sedikit(inputs.sks), normal: fuzzySets.sks.normal(inputs.sks), banyak: fuzzySets.sks.banyak(inputs.sks),
+                },
+                jam_tidur: {
+                    kurang: fuzzySets.jam_tidur.kurang(inputs.jam_tidur), cukup: fuzzySets.jam_tidur.cukup(inputs.jam_tidur), ideal: fuzzySets.jam_tidur.ideal(inputs.jam_tidur),
+                },
+                kesulitan_tugas: {
+                    mudah: fuzzySets.kesulitan_tugas.mudah(inputs.kesulitan_tugas), menantang: fuzzySets.kesulitan_tugas.menantang(inputs.kesulitan_tugas), sangat_sulit: fuzzySets.kesulitan_tugas.sangat_sulit(inputs.kesulitan_tugas),
+                },
+                aktivitas_non_akademik: {
+                    rendah: fuzzySets.aktivitas_non_akademik.rendah(inputs.aktivitas_non_akademik), sedang: fuzzySets.aktivitas_non_akademik.sedang(inputs.aktivitas_non_akademik), tinggi: fuzzySets.aktivitas_non_akademik.tinggi(inputs.aktivitas_non_akademik),
+                },
+            };
+            const ruleStrengths = { rendah: [], sedang: [], tinggi: [] };
+            const AND = (...args) => Math.min(...args);
+            const OR = (...args) => Math.max(...args);
+            
+            ruleStrengths.tinggi.push(AND(fuzzified.jam_tidur.kurang, fuzzified.kesulitan_tugas.sangat_sulit));
+            ruleStrengths.tinggi.push(AND(fuzzified.sks.banyak, fuzzified.jam_tidur.kurang));
+            ruleStrengths.tinggi.push(AND(fuzzified.sks.banyak, fuzzified.kesulitan_tugas.sangat_sulit));
+            ruleStrengths.tinggi.push(AND(fuzzified.jam_tidur.kurang, fuzzified.aktivitas_non_akademik.tinggi));
+            ruleStrengths.tinggi.push(AND(fuzzified.kesulitan_tugas.sangat_sulit, fuzzified.aktivitas_non_akademik.tinggi));
+
+            ruleStrengths.sedang.push(AND(fuzzified.sks.banyak, fuzzified.jam_tidur.cukup));
+            ruleStrengths.sedang.push(AND(fuzzified.sks.normal, fuzzified.kesulitan_tugas.sangat_sulit));
+            ruleStrengths.sedang.push(AND(fuzzified.sks.normal, fuzzified.jam_tidur.kurang));
+            ruleStrengths.sedang.push(AND(fuzzified.kesulitan_tugas.menantang, OR(fuzzified.jam_tidur.kurang, fuzzified.aktivitas_non_akademik.tinggi)));
+            ruleStrengths.sedang.push(AND(fuzzified.kesulitan_tugas.sangat_sulit, fuzzified.jam_tidur.ideal));
+            ruleStrengths.sedang.push(AND(fuzzified.sks.normal, fuzzified.kesulitan_tugas.menantang, fuzzified.aktivitas_non_akademik.sedang));
+            ruleStrengths.sedang.push(AND(fuzzified.sks.banyak, fuzzified.aktivitas_non_akademik.rendah, fuzzified.jam_tidur.ideal));
+            ruleStrengths.sedang.push(AND(fuzzified.kesulitan_tugas.mudah, fuzzified.aktivitas_non_akademik.tinggi));
+            ruleStrengths.sedang.push(AND(fuzzified.sks.normal, fuzzified.kesulitan_tugas.menantang, fuzzified.jam_tidur.cukup));
+            
+            ruleStrengths.rendah.push(fuzzified.sks.sedikit);
+            ruleStrengths.rendah.push(AND(fuzzified.kesulitan_tugas.mudah, fuzzified.aktivitas_non_akademik.rendah));
+            ruleStrengths.rendah.push(AND(fuzzified.jam_tidur.ideal, fuzzified.kesulitan_tugas.menantang, fuzzified.aktivitas_non_akademik.rendah));
+            ruleStrengths.rendah.push(AND(fuzzified.sks.normal, fuzzified.jam_tidur.ideal, fuzzified.kesulitan_tugas.mudah));
+
+            const aggregatedStrengths = {
+                rendah: OR(...ruleStrengths.rendah), sedang: OR(...ruleStrengths.sedang), tinggi: OR(...ruleStrengths.tinggi)
+            };
+            const universe = fuzzySets.level_stres.universe;
+            let weightedSum = 0; let membershipSum = 0;
+            universe.forEach(x => {
+                const mRendah = fuzzySets.level_stres.rendah(x);
+                const mSedang = fuzzySets.level_stres.sedang(x);
+                const mTinggi = fuzzySets.level_stres.tinggi(x);
+                const clippedRendah = Math.min(mRendah, aggregatedStrengths.rendah);
+                const clippedSedang = Math.min(mSedang, aggregatedStrengths.sedang);
+                const clippedTinggi = Math.min(mTinggi, aggregatedStrengths.tinggi);
+                const aggregatedMembership = Math.max(clippedRendah, clippedSedang, clippedTinggi);
+                weightedSum += x * aggregatedMembership;
+                membershipSum += aggregatedMembership;
+            });
+            if (membershipSum === 0) return 0;
+            return weightedSum / membershipSum;
+        };        // --- UI SCRIPT ---
+        const inputs = {
+            nama: document.getElementById('nama'),
+            jurusan: document.getElementById('jurusan'),
+            sks: document.getElementById('sks'),
+            jam_tidur: document.getElementById('jam_tidur'),
+            kesulitan_tugas: document.getElementById('kesulitan_tugas'),
+            aktivitas_non_akademik: document.getElementById('aktivitas_non_akademik'),
+        };
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resultScoreEl = document.getElementById('stressScore');
+        const resultLevelEl = document.getElementById('stressLevel');
+        const gaugeCircleEl = document.getElementById('gauge-circle');
+        const GAUGE_CIRCUMFERENCE = 2 * Math.PI * 45;
+        const promptTextArea = document.getElementById('prompt-text-area');
+        const resultTextArea = document.getElementById('result-text-area');
+        const errorMessageEl = document.getElementById('error-message');
+        
+        // Recommendation elements
+        const recommendationSection = document.getElementById('recommendation-section');
+        const resultNameEl = document.getElementById('result-name');
+        const resultJurusanEl = document.getElementById('result-jurusan');
+        const resultLevelDisplayEl = document.getElementById('result-level');
+        const resultScoreDisplayEl = document.getElementById('result-score');
+        const situationTextEl = document.getElementById('situation-text');
+        const recommendationListEl = document.getElementById('recommendation-list');
+        const tipsListEl = document.getElementById('tips-list');
+        const importantNoteEl = document.getElementById('important-note');
+        
+        // Recommendation content based on stress level
+        const recommendations = {
+            rendah: {
+                situation: "Selamat! Anda memiliki tingkat stres yang rendah. Ini menunjukkan bahwa Anda memiliki keseimbangan yang baik antara beban akademik dan istirahat. Meskipun demikian, tetap penting untuk mempertahankan kebiasaan baik yang telah Anda terapkan.",
+                recommendations: [
+                    "Pertahankan jadwal tidur yang konsisten",
+                    "Terus terapkan manajemen waktu yang baik",
+                    "Tetap jaga keseimbangan antara kegiatan akademik dan non-akademik",
+                    "Pertimbangkan untuk mengambil tantangan akademik baru yang sesuai kemampuan"
+                ],
+                tips: [
+                    "Jadilah mentor bagi teman yang membutuhkan bantuan dalam mengelola stres",
+                    "Gunakan pengalaman positif ini untuk mengembangkan ketahanan mental",
+                    "Evaluasi secara berkala metode belajar dan istirahat Anda",
+                    "Tetap waspada terhadap tanda-tanda stres yang mungkin muncul di masa mendatang"
+                ],
+                important: "Meskipun tingkat stres Anda rendah, tetaplah waspada terhadap perubahan dalam jadwal atau beban akademik. Jaga kesehatan fisik dan mental Anda dengan baik."
+            },
+            sedang: {
+                situation: "Anda memiliki tingkat stres yang sedang. Ini umum terjadi di kalangan mahasiswa, terutama saat periode ujian atau deadline tugas. Perhatikan bahwa tingkat stres ini masih dalam batas normal, tetapi perlu dikelola dengan baik agar tidak meningkat.",
+                recommendations: [
+                    "Tinjau kembali jadwal belajar dan istirahat Anda",
+                    "Prioritaskan tugas berdasarkan tenggat waktu dan tingkat kepentingan",
+                    "Tingkatkan durasi tidur menjadi 7-8 jam setiap malam",
+                    "Sisihkan waktu untuk aktivitas yang menenangkan pikiran",
+                    "Pertimbangkan untuk bergabung dengan kelompok belajar"
+                ],
+                tips: [
+                    "Praktikkan teknik pernapasan dalam saat merasa tertekan",
+                    "Hindari konsumsi kafein berlebihan, terutama di malam hari",
+                    "Lakukan olahraga ringan 20-30 menit setiap hari",
+                    "Batasi waktu penggunaan media sosial",
+                    "Komunikasikan kesulitan akademik dengan dosen atau asisten"
+                ],
+                important: "Tingkat stres sedang yang tidak dikelola dapat berubah menjadi tingkat stres tinggi. Luangkan waktu untuk evaluasi diri dan cari bantuan jika diperlukan. Ingat bahwa meminta bantuan adalah tanda kekuatan, bukan kelemahan."
+            },
+            tinggi: {
+                situation: "Anda memiliki tingkat stres yang tinggi. Hal ini bisa berdampak negatif pada kesehatan, performa akademik, dan kesejahteraan secara keseluruhan. Dibutuhkan perhatian khusus untuk mengelola dan mengurangi tingkat stres Anda saat ini.",
+                recommendations: [
+                    "Evaluasi ulang beban akademik Anda, pertimbangkan untuk mengurangi SKS semester depan",
+                    "Buat jadwal yang lebih terstruktur dengan waktu istirahat yang cukup",
+                    "Tingkatkan kualitas tidur, targetkan minimal 7 jam setiap malam",
+                    "Pertimbangkan untuk berkonsultasi dengan penasihat akademik atau konselor kampus",
+                    "Delegasikan atau kurangi kegiatan non-akademik yang tidak mendesak",
+                    "Belajar mengatakan 'tidak' untuk tanggung jawab tambahan"
+                ],
+                tips: [
+                    "Praktikkan meditasi atau mindfulness selama 10 menit setiap hari",
+                    "Gunakan teknik pomodoro (25 menit fokus, 5 menit istirahat) saat belajar",
+                    "Batasi penggunaan media sosial dan berita yang membuat stres",
+                    "Lakukan aktivitas fisik minimal 30 menit setiap hari",
+                    "Diskusikan perasaan Anda dengan teman dekat atau keluarga",
+                    "Tetapkan batasan yang jelas antara waktu belajar dan waktu pribadi"
+                ],
+                important: "Tingkat stres yang tinggi dapat berdampak serius pada kesehatan mental dan fisik Anda. Jangan ragu untuk mencari bantuan profesional jika Anda merasa terlalu terbebani. IPB memiliki layanan konseling mahasiswa yang dapat membantu Anda mengatasi stres akademik."
+            }
+        };        const mainContainer = document.getElementById('main-container');
+              calculateBtn.addEventListener('click', () => {
+            errorMessageEl.textContent = '';
+            const inputValues = {};
+            let isValid = true;
+            
+            // Enable scrolling when the button is clicked and results will be shown
+            mainContainer.style.height = 'auto';
+            mainContainer.classList.add('max-h-[90vh]', 'md:max-h-[85vh]', 'overflow-y-auto', 'scrollbar-custom');
+            
+            // Validasi nama dan jurusan
+            if (!inputs.nama.value.trim()) {
+                errorMessageEl.textContent = 'Harap masukkan nama Anda';
+                inputs.nama.style.borderColor = '#ef4444'; // Merah
+                return;
+            } else {
+                inputs.nama.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }
+            
+            if (!inputs.jurusan.value.trim()) {
+                errorMessageEl.textContent = 'Harap masukkan jurusan Anda';
+                inputs.jurusan.style.borderColor = '#ef4444'; // Merah
+                return;
+            } else {
+                inputs.jurusan.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }
+
+            // Validasi Input numerik
+            const numericInputs = {
+                sks: inputs.sks,
+                jam_tidur: inputs.jam_tidur,
+                kesulitan_tugas: inputs.kesulitan_tugas,
+                aktivitas_non_akademik: inputs.aktivitas_non_akademik
+            };
+            
+            for (const key in numericInputs) {
+                const inputEl = numericInputs[key];
+                const value = parseFloat(inputEl.value);
+                const min = parseFloat(inputEl.min || 0);
+                const max = key === 'sks' ? 25 : 
+                           key === 'jam_tidur' ? 10.5 : 
+                           key === 'kesulitan_tugas' ? 10 : 
+                           key === 'aktivitas_non_akademik' ? 21 : 100;
+
+                if (isNaN(value) || value < min || value > max) {
+                    errorMessageEl.textContent = `Input '${inputEl.previousElementSibling.textContent}' tidak valid.`;
+                    inputEl.style.borderColor = '#ef4444'; // Merah
+                    isValid = false;
+                } else {
+                    inputEl.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    inputValues[key] = value;
+                }
+            }
+            
+            if (!isValid) return;
+
+            // Hitung dan Tampilkan Hasil
+            const stress = prediksiStres(inputValues);
+            resultScoreEl.textContent = stress.toFixed(2);
+            
+            promptTextArea.style.opacity = '0';
+            resultTextArea.style.opacity = '1';
+
+            const offset = GAUGE_CIRCUMFERENCE * (1 - stress / 100);
+            gaugeCircleEl.style.strokeDashoffset = offset;
+
+            gaugeCircleEl.classList.remove('gauge-green', 'gauge-yellow', 'gauge-red');
+            let stressCategory, stressLevel;
+            
+            if (stress <= 45) {
+                stressLevel = 'Rendah';
+                stressCategory = 'rendah';
+                gaugeCircleEl.classList.add('gauge-green');
+                resultLevelEl.style.color = '#22c55e';
+            } else if (stress <= 75) {
+                stressLevel = 'Sedang';
+                stressCategory = 'sedang';
+                gaugeCircleEl.classList.add('gauge-yellow');
+                resultLevelEl.style.color = '#f59e0b';
+            } else {
+                stressLevel = 'Tinggi';
+                stressCategory = 'tinggi';
+                gaugeCircleEl.classList.add('gauge-red');
+                resultLevelEl.style.color = '#ef4444';
+            }
+            
+            resultLevelEl.textContent = stressLevel;
+            
+            // Tampilkan rekomendasi
+            resultNameEl.textContent = inputs.nama.value.trim();
+            resultJurusanEl.textContent = inputs.jurusan.value.trim();
+            resultLevelDisplayEl.textContent = stressLevel;
+            resultLevelDisplayEl.style.color = resultLevelEl.style.color;
+            resultScoreDisplayEl.textContent = `(${stress.toFixed(2)} / 100)`;
+            
+            situationTextEl.textContent = recommendations[stressCategory].situation;
+              // Tambahkan rekomendasi
+            recommendationListEl.innerHTML = '';
+            recommendations[stressCategory].recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                
+                const bullet = document.createElement('span');
+                bullet.innerHTML = '•';
+                bullet.className = 'mr-2 text-green-400';
+                
+                const text = document.createElement('span');
+                text.textContent = rec;
+                
+                li.appendChild(bullet);
+                li.appendChild(text);
+                recommendationListEl.appendChild(li);
+            });
+              // Tambahkan tips
+            tipsListEl.innerHTML = '';
+            recommendations[stressCategory].tips.forEach(tip => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                
+                const bullet = document.createElement('span');
+                bullet.innerHTML = '•';
+                bullet.className = 'mr-2 text-blue-400';
+                
+                const text = document.createElement('span');
+                text.textContent = tip;
+                
+                li.appendChild(bullet);
+                li.appendChild(text);
+                tipsListEl.appendChild(li);
+            });
+            
+            // Set catatan penting
+            importantNoteEl.textContent = recommendations[stressCategory].important;
+              // Tampilkan bagian rekomendasi
+            setTimeout(() => {
+                recommendationSection.classList.remove('opacity-0', 'translate-y-4', 'hidden');
+                recommendationSection.classList.add('opacity-100', 'translate-y-0');
+                
+                // Scroll ke hasil rekomendasi dengan smooth scroll
+                setTimeout(() => {
+                    recommendationSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 200);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
